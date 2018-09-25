@@ -120,7 +120,7 @@ class Salsa implements MainInterface
 					$return = call_user_func( $target );
 
 					if( is_string( $return ) && $returndata = json_decode( $return,1 ) ){
-							
+
 					} 
 				}
 
@@ -129,7 +129,7 @@ class Salsa implements MainInterface
 					'target' => $target,
 					'params' => $params,
 					'name' => $name,
-					'returndata' => $returndata;
+					'returndata' => $returndata
 				);
 
 			}
