@@ -1,22 +1,26 @@
 <?php
 namespace Salsa;
 
-class Salsa
+class Salsa implements MainInterface
 {
 
 	private $routes = array();
-
 	private $namedRoutes = array();
-
 	private $basePath = '';
-
 	private $matchTypes = array();
+	private $options = array(
 
-	public function __construct( $routes = array(), $basePath = '', $matchTypes = array() )
+	);
+	private $purify;
+
+	public function __construct( $routes = array(), $basePath = '', $matchTypes = array(), $options = array() )
 	{
 		$this->addRoutes( $routes );
 		$this->setBasePath( $basePath );
 		$this->addMatchTypes( $matchTypes );
+		$this->setOpitons( $options );
+		$config = \HTMLPurifier_Config::createDefault();
+		$this->purify = new HTML\SHTMLPurifier( $config );
 	}
 
 	public function addRoutes( $routes )
@@ -64,20 +68,25 @@ class Salsa
 		}
 
 
-		if( $requestmode === null ){
-			$requestmode = isset( $_SERVER["REQUEST_METHOD"] ) ? $_SERVER["REQUEST_METHOD"] : "GET";
+		if( $requestMethod === null ){
+			$requestMethod = isset( $_SERVER["REQUEST_METHOD"] ) ? $_SERVER["REQUEST_METHOD"] : "GET";
 		}
 
 		foreach( $this->routes as $handler ){
+
+			// echo "<pre>";
+			// var_dump( $handler );
+			// echo "</pre>";
+
 			list( $methods, $route, $target, $name ) = $handler;
 
 			$method_match = ( stripos( $methods, $requestMethod ) !== false );
 
 			// Method did not match continue to next route
-
 			if( !$method_match ){
 				continue;
 			}
+
 
 			if( $route === "*" ){
 				// wildcard matches all
@@ -106,10 +115,21 @@ class Salsa
 					}
 				}
 
+
+				if( is_callable( $target ) ){
+					$return = call_user_func( $target );
+
+					if( is_string( $return ) && $returndata = json_decode( $return,1 ) ){
+							
+					} 
+				}
+
+
 				return array(
 					'target' => $target,
 					'params' => $params,
-					'name' => $name
+					'name' => $name,
+					'returndata' => $returndata;
 				);
 
 			}
@@ -163,6 +183,10 @@ class Salsa
 		}
 
 		return "`^$route$`u";
+	}
+
+	public function setOpitons( $options = array() ){
+		$this->options = $options;
 	}
 
 }
