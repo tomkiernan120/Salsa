@@ -1,6 +1,8 @@
 <?php
 namespace Salsa;
 
+use Salsa\DataCollection\RouteCollection;
+
 class Salsa implements MainInterface
 {
 
@@ -13,14 +15,14 @@ class Salsa implements MainInterface
 	);
 	private $purify;
 
-	public function __construct( $routes = array(), $basePath = '', $matchTypes = array(), $options = array() )
+	private $route_factory;
+
+	public function __construct( ServiceProvider $service = null, $app = null, RouteCollection $routes = null, AbstractRouteFactory $route_factory = null )
 	{
-		$this->addRoutes( $routes );
-		$this->setBasePath( $basePath );
-		$this->addMatchTypes( $matchTypes );
-		$this->setOpitons( $options );
-		$config = \HTMLPurifier_Config::createDefault();
-		$this->purify = new HTML\SHTMLPurifier( $config );
+		$this->service = $service ?: new ServiceProvider();
+		$this->app     = $app ?: new App();
+		$this->routes  = $routes ?: new RouteCollection();
+		$this->route_factory = $route_factory ?: new RouteFactory();
 	}
 
 	public function addRoutes( $routes )
@@ -139,6 +141,11 @@ class Salsa implements MainInterface
 		return false;
 	}
 
+	public function method( $method, $path = "*", $callback = null ){
+		extract( $this->parseLooseArgumentOrder( func_get_args() ), EXTR_OVERWRITE );
+		$route = $this->route_factory->build( $callback, $path, $method );
+	}
+
 	public function setBasePath( $basePath )
 	{
 		$this->basePath = $basePath;
@@ -185,8 +192,33 @@ class Salsa implements MainInterface
 		return "`^$route$`u";
 	}
 
-	public function setOpitons( $options = array() ){
+	public function setOptions( $options = array() ){
 		$this->options = $options;
+	}
+
+	public function respond($method, $path = '*', $callback = null)
+    {
+        // Get the arguments in a very loose format
+        extract(
+            $this->parseLooseArgumentOrder(func_get_args()),
+            EXTR_OVERWRITE
+        );
+        $route = $this->route_factory->build($callback, $path, $method);
+        $this->routes->add($route);
+        return $route;
+    }
+
+
+	protected function parseLooseArgumentOrder( array $args ){
+		$callback = array_pop( $args );
+		$path = array_pop( $args );
+		$method = array_pop( $args );
+
+		return array(
+			"method" => $method,
+			"path" => $path,
+			"callback" => $callback
+		);
 	}
 
 }
