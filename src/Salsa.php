@@ -1,224 +1,126 @@
 <?php
 namespace Salsa;
 
-use Salsa\DataCollection\RouteCollection;
-
-class Salsa implements MainInterface
+/**
+ * Salsa 
+ * PHP Routing
+ * @author Tom Kiernan tkiernan120@gmail.com+
+ * 
+ */
+class Salsa
 {
+		private $routes = array();
+		private $baseroute = '';
+		private $currentRoute;
+		private $searchparams;
 
-	private $routes = array();
-	private $namedRoutes = array();
-	private $basePath = '';
-	private $matchTypes = array();
-	private $options = array(
-
-	);
-	private $purify;
-
-	private $route_factory;
-
-	public function __construct( ServiceProvider $service = null, $app = null, RouteCollection $routes = null, AbstractRouteFactory $route_factory = null )
-	{
-		$this->service = $service ?: new ServiceProvider();
-		$this->app     = $app ?: new App();
-		$this->routes  = $routes ?: new RouteCollection();
-		$this->route_factory = $route_factory ?: new RouteFactory();
-	}
-
-	public function addRoutes( $routes )
-	{
-		if( !is_array( $routes ) ){
-			throw new \Excpetion( 'Routes shoule be an array' );
-		}
-		else {
-			foreach( $routes as $route ){
-				call_user_func_array(array( $this, 'map' ), $route );
-			}
-		}
-	}
-
-	public function map( $method, $route, $target, $name = null )
-	{
-		$this->routes[] = array( $method, $route, $target, $name );
-
-		if( $name ){
-			if( isset( $this->namedRoutes[$name] ) ){
-				throw new \Excpetion( "Can not redeclare route {$name}" );
-			}
-			else {
-				$this->namedRoute[$route] = $route;
-			}
-		}
-		return;
-	}
-
-	public function match( $requestUrl = null, $requestMethod = null )
-	{
-		$params = array();
-		$match = false;
-
-		if( $requestUrl === null ){
-			$requestUrl = isset( $_SERVER["REQUEST_URI"] ) ? $_SERVER["REQUEST_URI"] : "/";
-		}
-
-		// remove baseURL
-		$requestUrl = substr( $requestUrl, strlen( $this->basePath ) );
-
-		// remove
-		if( ( $strpos = strpos( $requestUrl, "?" )) !== false ){
-			$requestUrl = substr( $requestUrl, 0, $strpos );
-		}
-
-
-		if( $requestMethod === null ){
-			$requestMethod = isset( $_SERVER["REQUEST_METHOD"] ) ? $_SERVER["REQUEST_METHOD"] : "GET";
-		}
-
-		foreach( $this->routes as $handler ){
-
-			// echo "<pre>";
-			// var_dump( $handler );
-			// echo "</pre>";
-
-			list( $methods, $route, $target, $name ) = $handler;
-
-			$method_match = ( stripos( $methods, $requestMethod ) !== false );
-
-			// Method did not match continue to next route
-			if( !$method_match ){
-				continue;
-			}
-
-
-			if( $route === "*" ){
-				// wildcard matches all
-				$match = true;
-			} elseif ( ( $position = strpos( $route, '[' ) ) === false ) {
-				// No params in url, do string comparison
-				$match = strcmp($requestUrl, $route) === 0;
-			} else {
-				// comapre request routewith route 
-				if( strncmp( $requestUrl, $route, $position ) !== 0 ){
-					continue;
-				}
-
-				$regex = $this->compiteRoute( $route );
-
-				$match = preg_replace( $regex, $requestUrl, $params ) === 1;
-			}
-
-			if( $match ){
-
-				if( $params ){
-					foreach( $params as $key => $value ){
-						if( is_numeric( $key ) ){
-							unset( $params[$key] );
-						}
-					}
-				}
-
-
-				if( is_callable( $target ) ){
-					$return = call_user_func( $target );
-
-					if( is_string( $return ) && $returndata = json_decode( $return,1 ) ){
-
-					} 
-				}
-
-
-				return array(
-					'target' => $target,
-					'params' => $params,
-					'name' => $name,
-					'returndata' => $returndata
-				);
-
-			}
-
-		}
-
-		return false;
-	}
-
-	public function method( $method, $path = "*", $callback = null ){
-		extract( $this->parseLooseArgumentOrder( func_get_args() ), EXTR_OVERWRITE );
-		$route = $this->route_factory->build( $callback, $path, $method );
-	}
-
-	public function setBasePath( $basePath )
-	{
-		$this->basePath = $basePath;
-	}
-	
-	public function addMatchTypes($matchTypes)
-	{
-		$this->matchTypes = array_merge($this->matchTypes, $matchTypes);
-	}
-
-	public function compileRoute( $route )
-	{
-		if( preg_match_all( '`(/|\.|)\[([^:\]*+)(?::([^:\]]*+))?\](\?|)`', $route, $matches, PREG_SET_ORDER ) ){
-
-
-			$matchTypes = $this->matchTypes;
-
-			foreach( $matches as $match ){
-				list( $block, $pre, $type, $param, $optional ) = $match;
-
-				if( isset( $matchTypes[$type] ) ){
-					$type = $matchTypes[$type];
-				} 
-				if( $pre === "." ){
-					$pre = "\.";
-				}
-
-				$options = $optional !== '' ? '?' : null;
-
-				$pattern = '(?:' 
-					. ( $pre !== '' ? $pre : null )
-					. '('
-					. (  $param !== '' ? "?p<{$param}>" : null )
-					. $type 
-					. ')'
-					. $optional
-					. ')'
-					. $optional;
-				$route = str_replace( $block, $patther, $route );
-			}
-
-		}
-
-		return "`^$route$`u";
-	}
-
-	public function setOptions( $options = array() ){
-		$this->options = $options;
-	}
-
-	public function respond($method, $path = '*', $callback = null)
+    /**
+     * summary
+     */
+    public function __construct( string $baseroute = '' )
     {
-        // Get the arguments in a very loose format
-        extract(
-            $this->parseLooseArgumentOrder(func_get_args()),
-            EXTR_OVERWRITE
-        );
-        $route = $this->route_factory->build($callback, $path, $method);
-        $this->routes->add($route);
-        return $route;
+        $this->setBaseRoute( $baseroute );
     }
 
 
-	protected function parseLooseArgumentOrder( array $args ){
-		$callback = array_pop( $args );
-		$path = array_pop( $args );
-		$method = array_pop( $args );
+   	// setters
+   	
+   	public function addRoutes( array $routes )
+   	{
+   		if( !is_array( $routes ) )
+   		{
+   			throw new Error( 'Expecting an array instead got a ' . gettype( $routes ) );
+   			return;
+   		}
 
-		return array(
-			"method" => $method,
-			"path" => $path,
-			"callback" => $callback
-		);
-	}
+   		if( !empty( $routes ) )
+   		{
+   			foreach( $routes as $name => $options )
+   			{
+   				$this->addRoute( $name, $options );
+   			}
+   		} 
+   		else {
+   			throw new warning( "Received emtpy array" );
+   		}
+   	}
+
+   	// TODO: Add method
+    public function addRoute( string $name,  string $route, $options = array() ) 
+    {
+  		if( isset( $this->routes[$name] ) && !isset( $options["overwrite"] ) )
+  		{
+  			throw new warning( "Route {$name} has already been set, to force overwrite set overwrite option" );
+  		}
+  		else if( ( isset( $this->routes[$name] ) && isset( $options["overwrite"] )  && (bool)$options["overwrite"] ) || !isset( $this->routes[$name] ) )
+  		{
+  			$this->routes[strtolower($route)][$name] = $options;
+  		}
+    }
+
+    public function setBaseRoute( string $baseroute = '' )
+    {
+   		$this->baseroute = trim($baseroute);
+    }
+
+    public function setCurrentRoute()
+    {
+    	$this->currentRoute = str_replace( $this->getBaseRoute(), "", strtok( $_SERVER["REQUEST_URI"], '?' ) );
+    }
+
+    // getters
+
+    public function getRoute( $name )
+    {
+    	return isset($this->routes[$name]) ?: false;
+    } 
+    
+    public function getRoutes()
+    {
+    	return $this->routes;
+    }
+
+    public function getCurrentRoute()
+    {
+    	return $this->currentRoute;
+    }
+
+    public function getBaseRoute()
+    {
+    	return $this->baseroute;
+    }
+
+    public function httpd404()
+    {
+    	$this->httpstatus( 404, "404 - Page not found" );
+    }
+
+    public function httpstatus( int $status, string $statusmessage = "" )
+    {
+    	http_response_code($status);
+    	if( $statusmessage )
+    	{
+    		echo $statusmessage;
+    	}
+    	exit;
+    }
+
+
+    public function route()
+    {
+
+    	$this->setCurrentRoute();
+    	$routes = $this->getRoutes();
+
+    	if( isset( $routes[$this->getCurrentRoute()] ) )
+    	{
+    		// TODO: Handle options passed into route
+    	}
+    	else 
+    	{
+    		$this->httpd404();
+    	}
+    }
+
 
 }
