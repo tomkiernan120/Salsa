@@ -1,22 +1,28 @@
 <?php
 namespace Salsa;
 
-class Salsa
+use Salsa\DataCollection\RouteCollection;
+
+class Salsa implements MainInterface
 {
 
 	private $routes = array();
-
 	private $namedRoutes = array();
-
 	private $basePath = '';
-
 	private $matchTypes = array();
+	private $options = array(
 
-	public function __construct( $routes = array(), $basePath = '', $matchTypes = array() )
+	);
+	private $purify;
+
+	private $route_factory;
+
+	public function __construct( ServiceProvider $service = null, $app = null, RouteCollection $routes = null, AbstractRouteFactory $route_factory = null )
 	{
-		$this->addRoutes( $routes );
-		$this->setBasePath( $basePath );
-		$this->addMatchTypes( $matchTypes );
+		$this->service = $service ?: new ServiceProvider();
+		$this->app     = $app ?: new App();
+		$this->routes  = $routes ?: new RouteCollection();
+		$this->route_factory = $route_factory ?: new RouteFactory();
 	}
 
 	public function addRoutes( $routes )
@@ -64,20 +70,25 @@ class Salsa
 		}
 
 
-		if( $requestmode === null ){
-			$requestmode = isset( $_SERVER["REQUEST_METHOD"] ) ? $_SERVER["REQUEST_METHOD"] : "GET";
+		if( $requestMethod === null ){
+			$requestMethod = isset( $_SERVER["REQUEST_METHOD"] ) ? $_SERVER["REQUEST_METHOD"] : "GET";
 		}
 
 		foreach( $this->routes as $handler ){
+
+			// echo "<pre>";
+			// var_dump( $handler );
+			// echo "</pre>";
+
 			list( $methods, $route, $target, $name ) = $handler;
 
 			$method_match = ( stripos( $methods, $requestMethod ) !== false );
 
 			// Method did not match continue to next route
-
 			if( !$method_match ){
 				continue;
 			}
+
 
 			if( $route === "*" ){
 				// wildcard matches all
@@ -106,10 +117,21 @@ class Salsa
 					}
 				}
 
+
+				if( is_callable( $target ) ){
+					$return = call_user_func( $target );
+
+					if( is_string( $return ) && $returndata = json_decode( $return,1 ) ){
+
+					} 
+				}
+
+
 				return array(
 					'target' => $target,
 					'params' => $params,
-					'name' => $name
+					'name' => $name,
+					'returndata' => $returndata
 				);
 
 			}
@@ -117,6 +139,11 @@ class Salsa
 		}
 
 		return false;
+	}
+
+	public function method( $method, $path = "*", $callback = null ){
+		extract( $this->parseLooseArgumentOrder( func_get_args() ), EXTR_OVERWRITE );
+		$route = $this->route_factory->build( $callback, $path, $method );
 	}
 
 	public function setBasePath( $basePath )
@@ -163,6 +190,35 @@ class Salsa
 		}
 
 		return "`^$route$`u";
+	}
+
+	public function setOptions( $options = array() ){
+		$this->options = $options;
+	}
+
+	public function respond($method, $path = '*', $callback = null)
+    {
+        // Get the arguments in a very loose format
+        extract(
+            $this->parseLooseArgumentOrder(func_get_args()),
+            EXTR_OVERWRITE
+        );
+        $route = $this->route_factory->build($callback, $path, $method);
+        $this->routes->add($route);
+        return $route;
+    }
+
+
+	protected function parseLooseArgumentOrder( array $args ){
+		$callback = array_pop( $args );
+		$path = array_pop( $args );
+		$method = array_pop( $args );
+
+		return array(
+			"method" => $method,
+			"path" => $path,
+			"callback" => $callback
+		);
 	}
 
 }
