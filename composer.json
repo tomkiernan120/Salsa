@@ -18,12 +18,12 @@
    },
    "autoload": {
       "psr-4": {
-         "Klein\\": "src/Klein/"
+         "Klein\\": "src/Salsa/"
       }
    },
    "autoload-dev": {
       "psr-4": {
-         "Klein\\Tests\\": "tests/Klein/Tests"
+         "Klein\\Tests\\": "tests/Salsa/Tests"
       }
    }
 }
