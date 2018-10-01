@@ -1,137 +1,134 @@
 <?php
+
 namespace Salsa;
 
-/**
- * Salsa 
- * PHP Routing
- * @author Tom Kiernan tkiernan120@gmail.com+
- * 
- */
-class Salsa
+class Salsa 
 {
-		private $routes = array();
-		private $baseroute = '';
-		private $currentRoute;
-		private $searchparams;
+	private $config;
+	private $baseRoute;
 
-		public $name;
-		public $currentOptions;
-		public $returndata;
+	private $routes;
 
-		use MagicTraits;
+	private $currentRoute;
+	private $currentMethod;
 
-    /**
-     * summary
-     */
-    public function __construct( string $baseroute = '' )
-    {
-				$this->setBaseRoute( $baseroute );
-    }
+	private $method;
 
+	private $handler;
 
-   	// setters
-   	
-   	public function addRoutes( array $routes )
-   	{
-   		if( !is_array( $routes ) )
-   		{
-   			throw new Error( 'Expecting an array instead got a ' . gettype( $routes ) );
-   			return;
-   		}
+	public function __construct( array $config = array() )
+	{
+		$this->setConfig( $config );
+		if( isset( $this->config["baseRoute"] ) ){
+			$this->setBaseRoute($this->config["baseRoute"]);
+		}
+	}
 
-   		if( !empty( $routes ) )
-   		{
-   			foreach( $routes as $name => $options )
-   			{
-   				$this->addRoute( $name, $options );
-   			}
-   		} 
-   		else {
-   			throw new warning( "Received emtpy array" );
-   		}
-   	}
+	public function setConfig( $config = array() )
+	{
+		$this->config = $config;
+		return $this;
+	}
 
-   	// TODO: Add method
-    public function addRoute( string $name,  string $route, $options = array() ) 
-    {
-  		if( isset( $this->routes[$name] ) && !isset( $options["overwrite"] ) )
-  		{
-  			throw new warning( "Route {$name} has already been set, to force overwrite set overwrite option" );
-  		}
-  		else if( ( isset( $this->routes[$name] ) && isset( $options["overwrite"] )  && (bool)$options["overwrite"] ) || !isset( $this->routes[$name] ) )
-  		{
-  			$this->routes[strtolower($route)]["name"] = $name;
-  			$this->routes[strtolower($route)]["options"] = $options;
-  		}
-    }
+	public function getConfig( $name = null )
+	{
+		if( !$name || !is_string( $name ) ){
+			return $this->name;
+		}
+		else if( is_string( $name ) ){
+			return isset( $this->config[$name] ) ? $this->config[$name] : false;
+		}
+	}
 
-    public function setBaseRoute( string $baseroute = '' )
-    {
-   		$this->baseroute = trim($baseroute);
-    }
+	public function getMethod()
+	{
+		return $this->method;
+	}
 
-    public function setCurrentRoute()
-    {
-    	$this->currentRoute = str_replace( $this->getBaseRoute(), "", strtok( $_SERVER["REQUEST_URI"], '?' ) );
-    }
+	public function setMethod( string $method )
+	{
+		$this->method = $method;
+	}
 
-    // getters
+	public function setBaseRoute( string $base = "" )
+	{
+		$this->baseRoute = strtolower($base);
+	}
 
-    public function getRoute( $name )
-    {
-    	return isset($this->routes[$name]) ?: false;
-    } 
-    
-    public function getRoutes()
-    {
-    	return $this->routes;
-    }
+	public function getBaseRoute()
+	{
+		return $this->baseRoute;
+	}
 
-    public function getCurrentRoute()
-    {
-    	return $this->currentRoute;
-    }
+	public function setCurrentRoute()
+	{
+		$this->currentRoute = str_replace( $this->getBaseRoute(), "", strtolower($_SERVER["REQUEST_URI"] ) );
+		if( $this->currentRoute != "/" ){
+			$this->currentRoute = rtrim( $this->currentRoute, "/" );
+		} 
+		return $this->currentRoute;
+	}
 
-    public function getBaseRoute()
-    {
-    	return $this->baseroute;
-    }
+	public function getCurrentRoute()
+	{
+		return $this->currentRoute;
+	}
 
-    public function httpd404()
-    {
-    	$this->httpstatus( 404, "404 - Page not found" );
-    }
+	public function setHandler( $handler = null )
+	{
+		if( $handler ){
+				$this->handler = is_array($handler) ? $handler[0] : $handler;	
+				var_dump( $this->handler );
+		}
+	}
 
-    public function httpstatus( int $status, string $statusmessage = "" )
-    {
-    	http_response_code($status);
-    	if( $statusmessage )
-    	{
-    		echo $statusmessage;
-    	}
-    	exit;
-    }
+	public function getHandler()
+	{
+		return $this->handler;
+	}
 
+	public function addRoute( $route, $params, $method = "GET|POST|PUT|DELETE" )
+	{
+		$this->routes[strtolower($route)][$method] = $params;
+	}
 
-    public function route()
-    {
+	public function run()
+	{
+		$route = $this->setCurrentRoute();
+		$methods = explode( "|", @array_keys( @$this->routes[$route] )[0]);
+		
+		var_dump( array_values( $this->routes[$route] )  );
 
-    	$this->setCurrentRoute();
-    	$routes = $this->getRoutes();
+		$this->setHandler( array_values($this->routes[$route]) );
 
-    	if( isset( $routes[$this->getCurrentRoute()] ) )
-    	{
-    		$this->currentName = $routes[$this->getCurrentRoute()]["name"];
-				$this->currentOptions = $routes[$this->getCurrentRoute()]["options"];
-				
-				$this->parseOptions();
+		if( in_array( $_SERVER["REQUEST_METHOD"], $methods ) ){
+			$this->setmethod( $_SERVER["REQUEST_METHOD"] );
+		}
 
-    	}
-    	else
-    	{
-    		$this->httpd404();
-    	}
-    }
+		if( $this->getHandler() ) {
+			$this->process();
+		}
+		else {
+			$this->error();
+		}
+	}
 
+	public function error( $errorMessage = "404 - Page not found", $code = 404 ) // TODO: could add a hook in here to allow for plugins
+	{
+		http_response_code( $code );
+		echo $errorMessage;
+		exit;
+	}
+
+	public function process()
+	{
+		if( isset( $this->handler ) ){
+			$type = gettype($this->handler);
+			var_dump( $type );
+			if( is_object( $type ) && is_callable( $type ) ){
+				call_user_func_array( $type, @$params = array() );
+			}
+		}
+	}
 
 }
