@@ -16,6 +16,7 @@ class Salsa
 
 		public $name;
 		public $currentOptions;
+		public $returndata;
 
 		use MagicTraits;
 
@@ -24,7 +25,7 @@ class Salsa
      */
     public function __construct( string $baseroute = '' )
     {
-        $this->setBaseRoute( $baseroute );
+				$this->setBaseRoute( $baseroute );
     }
 
 
@@ -53,10 +54,6 @@ class Salsa
    	// TODO: Add method
     public function addRoute( string $name,  string $route, $options = array() ) 
     {
-    	// echo "<pre>";
-    	// var_dump( gettype( $options ) );
-    	// var_dump( $options );
-    	// echo "</pre>";
   		if( isset( $this->routes[$name] ) && !isset( $options["overwrite"] ) )
   		{
   			throw new warning( "Route {$name} has already been set, to force overwrite set overwrite option" );
@@ -64,12 +61,6 @@ class Salsa
   		else if( ( isset( $this->routes[$name] ) && isset( $options["overwrite"] )  && (bool)$options["overwrite"] ) || !isset( $this->routes[$name] ) )
   		{
   			$this->routes[strtolower($route)]["name"] = $name;
-
-    	// echo "<pre>";
-    	// var_dump( gettype( $options ) );
-    	// var_dump( $options );
-    	// echo "</pre>";
-
   			$this->routes[strtolower($route)]["options"] = $options;
   		}
     }
@@ -131,10 +122,12 @@ class Salsa
     	if( isset( $routes[$this->getCurrentRoute()] ) )
     	{
     		$this->currentName = $routes[$this->getCurrentRoute()]["name"];
-    		$this->currentOptions = $routes[$this->getCurrentRoute()]["options"];
+				$this->currentOptions = $routes[$this->getCurrentRoute()]["options"];
+				
+				$this->parseOptions();
 
     	}
-    	else 
+    	else
     	{
     		$this->httpd404();
     	}

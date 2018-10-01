@@ -30,7 +30,7 @@ class ObjectHandler
 
 	public function call()
 	{
-		var_dump( getttype( $this->object ) );
+		// var_dump( getttype( $this->object ) );
 	}
 
 }
