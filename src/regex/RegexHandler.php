@@ -8,10 +8,10 @@ namespace Salsa\Regex;
 class RegexHandler
 {
 
-		const ALLOWED_CHARACTERS = '[a-zA-Z0-9\_\-]+';
+	const ALLOWED_CHARACTERS = '[a-zA-Z0-9\_\-]+';
 
-		public $patternAsRegex;
-		public $params = array();
+	public $patternAsRegex;
+	public $params = array();
 
     /**
      * summary
@@ -61,7 +61,7 @@ class RegexHandler
      */
     public function converToRegex( $pattern )
     {
-    	if( !$this->validCharacters( $pattern ) ){
+    	if( !$this->isValid( $pattern ) ){
     		return false;
     	}
 
@@ -115,8 +115,8 @@ class RegexHandler
     public function convertParameter( $pattern )
     {
     	return preg_replace(
-      '/:('.$allowedCharacters.')/', // replace ":param"
-      '(?<$1>'. $allowedCharacters .')', // with "(?<param>[a-zA-Z0-9\_\-]+)"
+      '/:('.self::ALLOWED_CHARACTERS.')/', // replace ":param"
+      '(?<$1>'. self::ALLOWED_CHARACTERS .')', // with "(?<param>[a-zA-Z0-9\_\-]+)"
       $pattern);
     }
 
@@ -128,8 +128,8 @@ class RegexHandler
     public function buildCaptureGroup( $pattern )
     {
     	return preg_replace(
-      '/{('.$allowedCharacters.')}/',
-      '(?<$1>'.$allowedCharacters.')',
+      '/{('.self::ALLOWED_CHARACTERS.')}/',
+      '(?<$1>'.self::ALLOWED_CHARACTERS.')',
       $pattern);
     }
 
@@ -148,9 +148,9 @@ class RegexHandler
      * @param  [type] $pattern [description]
      * @return [type]          [description]
      */
-    public function validCharacters( $pattern )
+    public function isValid( $pattern )
     {
-    	return preg_match( '/[^-:\/_{}()a-zA-Z\d]/', $pattern );
+    	return !preg_match( '/[^-:\/_{}()a-zA-Z\d]/', $pattern );
     }
 
 }
