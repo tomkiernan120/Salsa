@@ -2,28 +2,25 @@
 
 namespace Salsa;
 
+
+use Salsa\Http\HTTPHandler as HTTP;
+use Salsa\Regex\RegexHandler as Regex;
+use Salsa\Error\ErrorHandler as Error;
+
 final class Salsa 
 {
+
 	private $config;
 	private $baseRoute;
-
 	private $routes;
-
 	private $currentRoute;
 	private $currentMethod;
-
 	private $method;
 	private $handler;
 
-  private $parameters;
-  public $patternAsRegex;
   public $currentMatchedRoute;
-
-  const ALL_METHODS = "GET|POST|PUT|DELETE";
-  const METHOD_GET = "GET";
-  const METHOD_POST = "POST";
-  const METHOD_PUT = "PUT";
-  const METHOD_DELETE = "DELETE";
+  public $http;
+  public $regex;
 
 	public function __construct( array $config = array() )
 	{
@@ -31,6 +28,8 @@ final class Salsa
 		if( isset( $this->config["baseRoute"] ) ){
 			$this->setBaseRoute($this->config["baseRoute"]);
 		}
+    $this->http = new HTTP;
+    $this->regex = new Regex;
 	}
 
 	public function setConfig( $config = array() )
@@ -62,12 +61,11 @@ final class Salsa
 
 	public function setCurrentRoute()
 	{
+    $this->http->setMethod();
 		$this->currentRoute = str_replace( $this->getBaseRoute(), "", strtolower($_SERVER["REQUEST_URI"] ) );
 		if( $this->currentRoute != "/" ){
 			$this->currentRoute = rtrim( $this->currentRoute, "/" );
 		} 
-
-    $this->setMethod();
 
 		return $this->currentRoute;
 	}
@@ -94,34 +92,12 @@ final class Salsa
 		}
 	}
 
-  public function setMethod()
-  {
-    $this->currentMethod = $_SERVER["REQUEST_METHOD"];
-    return $this;
-  }
-
-  public function getMethod()
-  {
-    return $this->currentMethod;
-  }
-
 	public function getHandler()
 	{
 		return $this->handler;
 	}
 
-  public function setParams( $parameter = array() )
-  {
-    $this->parameters = $parameter;
-    return $this;
-  }
-
-  public function getParams()
-  {
-    return $this->parameters;
-  }
-
-	public function addRoute( $route, $parameter, string $method = self::ALL_METHODS )
+	public function addRoute( $route, $parameter, string $method = HTTP::ALL_METHODS )
 	{
 		$this->routes[strtolower($route)][$method] = $parameter;
     return $this;
@@ -138,18 +114,18 @@ final class Salsa
       return false;
     }
 
-
     foreach( $this->routes as $route => $methods ){
       
       foreach( $methods as $methodsString => $options ){
         
         $methodArray = explode( "|", $methodsString );
 
-        if( in_array( $this->currentMethod, $methodArray ) ){
+        if( in_array( $this->http->getMethod(), $methodArray ) ){
 
-          $this->patternAsRegex = $this->getRegex( $route );
+          $this->regex->converToRegex( $route );
 
-          $return = $this->parseRegex( $this->patternAsRegex );
+          $return = $this->regex->parseRegex( $this->getCurrentRoute() );
+
 
           if( $return !== false ){
             $this->setCurrentMatchedRoute( $this->routes[$route] ); 
@@ -168,79 +144,19 @@ final class Salsa
     $this->setCurrentRoute();
     $this->checkRoute();
 
+
     if( null === $this->getCurrentMatchedRoute() ){
-      $this->error();
-      die;
+      Error::error();
     }
 
 		if( $this->getHandler() ) {
 			$this->process();
 		}
 		else {
-			$this->error();
+      Error::error();
 		}
 	}
 
-	public function error( $errorMessage = "404 - Page not found", $code = 404 ) // TODO: could add a hook in here to allow for plugins
-	{
-		http_response_code( $code );
-		echo $errorMessage;
-		exit;
-	}
-
-  public function getRegex( $pattern )
-  {
-
-    if( preg_match( '/[^-:\/_{}()a-zA-Z\d]/', $pattern ) ){
-      return false; // invalid
-    }
-
-    // turn "(/)" into "/?"
-    $pattern = preg_replace( '#\(/\)#', '/?', $pattern );
-
-
-    $allowedCharacters = '[a-zA-Z0-9\_\-]+';
-
-    $pattern = preg_replace(
-      '/:('.$allowedCharacters.')/', // replace ":param"
-      '(?<$1>'. $allowedCharacters .')', // with "(?<param>[a-zA-Z0-9\_\-]+)"
-      $pattern
-    );
-
-
-    // capture group for {param}
-    $pattern = preg_replace(
-      '/{('.$allowedCharacters.')}/',
-      '(?<$1>'.$allowedCharacters.')',
-      $pattern
-    );
-
-    $patternAsRegex = "@^" . $pattern . "$@D";
-
-    return $patternAsRegex;
-  }
-
-  public function parseRegex( $url )
-  {
-
-
-    if( $ok = !!$this->patternAsRegex ){
-
-      if( $ok = preg_match( $this->patternAsRegex, $this->getCurrentRoute(), $matches ) ){
-        // get elements with string keys from matches
-        $params = array_intersect_key($matches, array_flip( array_filter( array_keys( $matches ), 'is_string' ) ) );
-
-        $this->setParams( $params );
-        return $params;
-      }
-      else {
-        return false;
-      } 
-      // needs to check current route agaisnt match
-
-    }
-
-  }
 
 	public function process()
 	{
@@ -252,7 +168,7 @@ final class Salsa
 		$type = gettype($this->handler);
 
 		if( is_object( $this->handler ) && is_callable( $this->handler ) ){
-			$return = call_user_func_array( $this->handler, $this->getParams() );
+			$return = call_user_func_array( $this->handler, $this->regex->getParams() );
       if( is_string( $return ) ){
         echo $return;
       }
