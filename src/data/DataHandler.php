@@ -78,7 +78,7 @@ class DataHandler
     }
 
     $type = $this->getType();
-
+    error_log( print_r( $type,1 ) );
     if ( $type == "object" && is_callable( $this->handler) ) {
       $this->object();
     }
@@ -106,7 +106,7 @@ class DataHandler
 
   public function string()
   {
-    if ( isset( $this->handler) ) {
+    if ( !isset( $this->handler) ) {
       return false;
     }
     $this->outputString($this->handler);
@@ -114,6 +114,7 @@ class DataHandler
 
   public function outputString(string $string)
   {
+    error_log( print_r( $string,1 ) );
     echo $string;
   }
 

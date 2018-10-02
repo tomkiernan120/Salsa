@@ -15,5 +15,13 @@ trait Util
     {
    		return ( $string != strip_tags( $string ) );
     }
+
+
+    public static function generateUrl( string $string )
+    {
+    	$url = preg_replace( "/[^a-zA-Z\/-]/", "", strtolower($string) );
+    	$url = preg_replace( "/-{2,}/", "-", $url );
+    	return trim( $url, "/" );	
+    }
     
 }

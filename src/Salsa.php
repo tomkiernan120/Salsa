@@ -146,7 +146,7 @@ final class Salsa
       return false;
     }
 
-    if( !count( $this->routes ) ){
+    if( !isset( $this->routes ) || !count( $this->routes ) ){
       return false;
     }
 

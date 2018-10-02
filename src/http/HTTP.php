@@ -7,6 +7,7 @@ namespace Salsa\Http;
 class HTTPHandler 
 {
 
+    
     const ALL_METHODS   = "GET|POST|PUT|DELETE";
     const METHOD_GET    = "GET";
     const METHOD_POST   = "POST";
