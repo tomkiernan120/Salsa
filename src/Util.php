@@ -21,7 +21,7 @@ trait Util
     {
     	$url = preg_replace( "/[^a-zA-Z\/-]/", "", strtolower($string) );
     	$url = preg_replace( "/-{2,}/", "-", $url );
-    	return trim( $url, "/" );	
+    	return $url;	
     }
     
 }
