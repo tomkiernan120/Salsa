@@ -93,7 +93,7 @@ final class Salsa
     $this->http->setMethod();
 		$this->currentRoute = str_replace( $this->getBaseRoute(), "", strtolower($_SERVER["REQUEST_URI"] ) );
 		if( $this->currentRoute != "/" ){
-			$this->currentRoute = ltrimg( $this->currentRoute, "/" );
+			$this->currentRoute = ltrim( $this->currentRoute, "/" );
 		} 
 
 		return $this->currentRoute;
