@@ -2,7 +2,7 @@
 
 namespace Salsa;
 
-class Salsa 
+final class Salsa 
 {
 	private $config;
 	private $baseRoute;
@@ -18,7 +18,6 @@ class Salsa
   private $parameters;
   public $patternAsRegex;
   public $currentMatchedRoute;
-
 
   const ALL_METHODS = "GET|POST|PUT|DELETE";
   const METHOD_GET = "GET";
@@ -152,7 +151,7 @@ class Salsa
 
           $return = $this->parseRegex( $this->patternAsRegex );
 
-          if( is_array( $return ) && !empty( $return ) ){
+          if( $return !== false ){
             $this->setCurrentMatchedRoute( $this->routes[$route] ); 
             $this->setHandler( $options );
             return $return;
@@ -223,6 +222,7 @@ class Salsa
 
   public function parseRegex( $url )
   {
+
 
     if( $ok = !!$this->patternAsRegex ){
 
