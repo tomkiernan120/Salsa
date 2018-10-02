@@ -93,7 +93,7 @@ final class Salsa
     $this->http->setMethod();
 		$this->currentRoute = str_replace( $this->getBaseRoute(), "", strtolower($_SERVER["REQUEST_URI"] ) );
 		if( $this->currentRoute != "/" ){
-			$this->currentRoute = rtrim( $this->currentRoute, "/" );
+			$this->currentRoute = ltrimg( $this->currentRoute, "/" );
 		} 
 
 		return $this->currentRoute;
@@ -131,7 +131,7 @@ final class Salsa
    */
 	public function addRoute( $route, $parameter, string $method = HTTP::ALL_METHODS )
 	{
-		$this->routes[strtolower($route)][$method] = $parameter;
+		$this->routes[Util::generateUrl(strtolower($route))][$method] = $parameter;
     return $this;
 	}
 
