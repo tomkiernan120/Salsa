@@ -13,8 +13,18 @@ class Salsa
 	private $currentMethod;
 
 	private $method;
-
 	private $handler;
+
+  private $parameters;
+  public $patternAsRegex;
+  public $currentMatchedRoute;
+
+
+  const ALL_METHODS = "GET|POST|PUT|DELETE";
+  const METHOD_GET = "GET";
+  const METHOD_POST = "POST";
+  const METHOD_PUT = "PUT";
+  const METHOD_DELETE = "DELETE";
 
 	public function __construct( array $config = array() )
 	{
@@ -40,17 +50,6 @@ class Salsa
 		}
 	}
 
-	public function getMethod()
-	{
-		return $this->method;
-	}
-
-	public function setMethod( string $method )
-	{
-		$this->method = $method;
-    return $this;
-	}
-
 	public function setBaseRoute( string $base = "" )
 	{
 		$this->baseRoute = strtolower($base);
@@ -68,6 +67,9 @@ class Salsa
 		if( $this->currentRoute != "/" ){
 			$this->currentRoute = rtrim( $this->currentRoute, "/" );
 		} 
+
+    $this->setMethod();
+
 		return $this->currentRoute;
 	}
 
@@ -76,47 +78,101 @@ class Salsa
 		return $this->currentRoute;
 	}
 
+  public function setCurrentMatchedRoute( $route )
+  {
+    $this->currentMatchedRoute = $route;
+  }
+
+  public function getCurrentMatchedRoute()
+  {
+    return $this->currentMatchedRoute;
+  }
+
 	public function setHandler( $handler = null )
 	{
 		if( $handler ){
-				$this->handler = is_array($handler) ? $handler[0] : $handler;	
+				$this->handler = $handler;	
 		}
 	}
+
+  public function setMethod()
+  {
+    $this->currentMethod = $_SERVER["REQUEST_METHOD"];
+    return $this;
+  }
+
+  public function getMethod()
+  {
+    return $this->currentMethod;
+  }
 
 	public function getHandler()
 	{
 		return $this->handler;
 	}
 
-  public function setParams( $params = array() )
+  public function setParams( $parameter = array() )
   {
-    $this->params = $params;
+    $this->parameters = $parameter;
     return $this;
   }
 
   public function getParams()
   {
-    return $this->params;
+    return $this->parameters;
   }
 
-	public function addRoute( $route, $params, $method = "GET|POST|PUT|DELETE" )
+	public function addRoute( $route, $parameter, string $method = self::ALL_METHODS )
 	{
-		$this->routes[strtolower($route)][$method] = $params;
+		$this->routes[strtolower($route)][$method] = $parameter;
     return $this;
 	}
+
+  public function checkRoute()
+  {
+
+    if( null == $this->getCurrentRoute() ){
+      return false;
+    }
+
+    if( !count( $this->routes ) ){
+      return false;
+    }
+
+
+    foreach( $this->routes as $route => $methods ){
+      
+      foreach( $methods as $methodsString => $options ){
+        
+        $methodArray = explode( "|", $methodsString );
+
+        if( in_array( $this->currentMethod, $methodArray ) ){
+
+          $this->patternAsRegex = $this->getRegex( $route );
+
+          $return = $this->parseRegex( $this->patternAsRegex );
+
+          if( is_array( $return ) && !empty( $return ) ){
+            $this->setCurrentMatchedRoute( $this->routes[$route] ); 
+            $this->setHandler( $options );
+            return $return;
+          }
+        }
+      }
+    }
+  }
 
 	public function run()
 	{
     // TODO: tidy up routing big style!!
     // FIX: really need to stop supressing warnings
-		$route = $this->setCurrentRoute();
-		$methods = explode( "|", @array_keys( @$this->routes[$route] )[0]);
-		
-		$this->setHandler( @array_values($this->routes[$route]) );
+    $this->setCurrentRoute();
+    $this->checkRoute();
 
-		if( in_array( $_SERVER["REQUEST_METHOD"], $methods ) ){
-			$this->setmethod( $_SERVER["REQUEST_METHOD"] );
-		}
+    if( null === $this->getCurrentMatchedRoute() ){
+      $this->error();
+      die;
+    }
 
 		if( $this->getHandler() ) {
 			$this->process();
@@ -135,43 +191,51 @@ class Salsa
 
   public function getRegex( $pattern )
   {
+
     if( preg_match( '/[^-:\/_{}()a-zA-Z\d]/', $pattern ) ){
       return false; // invalid
     }
 
-    // turn "(/)" int "/?"
+    // turn "(/)" into "/?"
     $pattern = preg_replace( '#\(/\)#', '/?', $pattern );
 
+
     $allowedCharacters = '[a-zA-Z0-9\_\-]+';
+
     $pattern = preg_replace(
-      '/:( '.$allowedCharacters.' )/', // replace ":param"
+      '/:('.$allowedCharacters.')/', // replace ":param"
       '(?<$1>'. $allowedCharacters .')', // with "(?<param>[a-zA-Z0-9\_\-]+)"
       $pattern
     );
 
+
     // capture group for {param}
     $pattern = preg_replace(
       '/{('.$allowedCharacters.')}/',
-      '(?<$1>'.$allowedCharacters.')'
+      '(?<$1>'.$allowedCharacters.')',
+      $pattern
     );
-
 
     $patternAsRegex = "@^" . $pattern . "$@D";
 
     return $patternAsRegex;
   }
 
-  public function parseRegex()
+  public function parseRegex( $url )
   {
-    $url = $this->getCurrentRoute();
 
-    $patterAsRegex = $this->getRegex( $url );
+    if( $ok = !!$this->patternAsRegex ){
 
-    if( $ok = !!$patterAsRegex ){
+      if( $ok = preg_match( $this->patternAsRegex, $this->getCurrentRoute(), $matches ) ){
+        // get elements with string keys from matches
+        $params = array_intersect_key($matches, array_flip( array_filter( array_keys( $matches ), 'is_string' ) ) );
 
-      // if( $ok = preg_match( $patternAsRegex, $ ) ){
-
-      // } 
+        $this->setParams( $params );
+        return $params;
+      }
+      else {
+        return false;
+      } 
       // needs to check current route agaisnt match
 
     }
@@ -187,8 +251,6 @@ class Salsa
 
 		$type = gettype($this->handler);
 
-    $this->setParams();
-
 		if( is_object( $this->handler ) && is_callable( $this->handler ) ){
 			$return = call_user_func_array( $this->handler, $this->getParams() );
       if( is_string( $return ) ){
@@ -199,7 +261,7 @@ class Salsa
       if( isset( $this->handler["controller"] ) && class_exists( $this->handler["controller"] ) ){
         $controller = new $this->handler["controller"];
         if( method_exists( $controller , $this->handler["method"] ) ){
-          $return = $controller->{$this->handler["method"]}( @$this->handler["passin"] );
+          $return = $controller->{$this->handler["method"]}( $this->getParams() );
           if( is_string( $return ) ){
             echo $return;
           } 
@@ -207,5 +269,5 @@ class Salsa
       }
     }
 	}
-  
+
 }
