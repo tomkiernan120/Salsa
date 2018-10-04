@@ -4,7 +4,6 @@
  */
 namespace Salsa;
 
-
 use Salsa\Http\HTTPHandler as HTTP;
 use Salsa\Regex\RegexHandler as Regex;
 use Salsa\Error\ErrorHandler as Error;
@@ -188,7 +187,7 @@ final class Salsa
       Error::error();
     }
 
-		if( $this->data->getHandler() ) {
+		if( null !== $this->data->getHandler() ) {
 			$this->data->process();
 		}
 		else {
