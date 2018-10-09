@@ -117,7 +117,6 @@ class DataHandler
 
   public function outputString(string $string)
   {
-    error_log( print_r( $string,1 ) );
     echo $string;
   }
 
@@ -127,7 +126,7 @@ class DataHandler
       return false;
     }
     if (isset($this->handler) && isset($this->handler)) {
-      $this->callController($this->hanlder);
+      $this->callController($this->handler);
     }
   }
 
