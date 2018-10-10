@@ -92,7 +92,8 @@ final class Salsa
 	public function setCurrentRoute()
 	{
     $this->http->setMethod();
-		$this->currentRoute = str_replace( $this->getBaseRoute(), "", strtolower( strtok( $_SERVER["REQUEST_URI"], "?" ) ) );
+    $dirname = trim( dirname( $_SERVER["PHP_SELF"] ), "/" ) . "/";
+		$this->currentRoute = str_replace( array($this->getBaseRoute(), $dirname ), array(""), strtolower( strtok( $_SERVER["REQUEST_URI"], "?" ) ) );
 		if( $this->currentRoute != "/" ){
 			$this->currentRoute = ltrim( $this->currentRoute, "/" );
 		} 
@@ -197,8 +198,11 @@ final class Salsa
 
 	public function redirect( $url, $statusCode = 303 )
 	{
-	   header('Location: ' . $url, true, $statusCode);
-	   die();
+		if ( !headers_sent() ) {		
+	   	header('Location: ' . $url, true, $statusCode);
+			header("Connection: close");
+	   	exit;
+		}
 	}
 
 }
