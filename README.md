@@ -1,4 +1,4 @@
-# Salsa
+# Salsa[![Open Source Helpers](https://www.codetriage.com/tomkiernan120/sourcream/badges/users.svg)](https://www.codetriage.com/tomkiernan120/sourcream)
 
 Open source, PHP routing enging
 
