@@ -13,17 +13,20 @@ trait Util
     /**
      * summary
      */
-    public static function isHTML( string $string )
+    public static function isHTML( $string )
     {
    		return ( $string != strip_tags( $string ) );
     }
 
 
-    public static function generateUrl( string $string )
+    public static function generateUrl( $string )
     {
     	$url = preg_replace( "/[^a-zA-Z\/-]/", "", strtolower($string) );
         $url = preg_replace( "/-{2,}/", "-", $url );
-        $url = ltrim( $url, "/" );
+        $url = preg_replace( "/\/{2,}/", "-", $url );
+        if( "/" !== $url ){
+            $url = ltrim( $url, "/" );
+        }
     	return $url;	
     }
     
