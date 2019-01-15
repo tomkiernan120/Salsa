@@ -83,17 +83,17 @@ class DataHandler
     $type = $this->getType();
     error_log( print_r( $type,1 ) );
     if ( $type == "object" && is_callable( $this->handler) ) {
-      $this->object();
+      $this->objectHandler();
     }
     else if ($type == "string") {
-      $this->string();
+      $this->stringHandler();
     }
     else if ($type == "array") {
-      $this->array();
+      $this->arrayHandler();
     }
   }
 
-  public function object()
+  public function objectHandler()
   {
     if ( !isset( $this->handler ) ) {
       return false;
@@ -107,7 +107,7 @@ class DataHandler
     $this->setReturnData( call_user_func_array($this->handler, $this->salsa->regex->params));
   }
 
-  public function string()
+  public function stringHandler()
   {
     if ( !isset( $this->handler) ) {
       return false;
@@ -120,7 +120,7 @@ class DataHandler
     echo $string;
   }
 
-  public function array()
+  public function arrayHandler()
   {
     if( !isset( $this->handler ) ) {
       return false;
