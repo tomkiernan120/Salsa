@@ -19,7 +19,7 @@ class DataHandler
   /**
    * summary
    */
-  public function __construct( \Salsa\Salsa $salsa )
+  public function __construct( $salsa )
   {
     $this->salsa = $salsa;
   }
@@ -48,7 +48,6 @@ class DataHandler
    */
   public function setReturnData($data)
   {
-    error_log( print_r( $data,1 ) );
     $this->returnData = $data;
   }
 
@@ -81,7 +80,8 @@ class DataHandler
     }
 
     $type = $this->getType();
-    error_log( print_r( $type,1 ) );
+
+
     if ( $type == "object" && is_callable( $this->handler) ) {
       $this->objectHandler();
     }
@@ -115,7 +115,7 @@ class DataHandler
     $this->outputString($this->handler);
   }
 
-  public function outputString(string $string)
+  public function outputString($string)
   {
     echo $string;
   }
@@ -130,7 +130,7 @@ class DataHandler
     }
   }
 
-  public function callController(array $data)
+  public function callController($data)
   {
     if( class_exists( $data["controller"] ) ) {
       $controller = new $data["controller"];
