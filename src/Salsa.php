@@ -71,7 +71,7 @@ final class Salsa
 	 * [setBaseRoute description]
 	 * @param string $base [description]
 	 */
-	public function setBaseRoute( string $base = "" )
+	public function setBaseRoute( $base = "" )
 	{
 		$this->baseRoute = strtolower($base);
     return $this;
