@@ -137,7 +137,9 @@ class DataHandler
     }
 
     if( $controller && method_exists( $controller, $data["method"] ) ) {
-      $this->setReturnData( $controller->{$data["method"]}(array_merge($this->salsa->params, is_array($data["passin"]) ? $data["passin"] : array())));
+      $params = array_merge( $this->salsa->params, is_array( $data["params"] ) ? $data["params"] : array() );
+      $returndata = call_user_func_array( array( $controller, $data["method"] ), $params );
+      $this->setReturnData( $returndata );
     }
   }
 }
