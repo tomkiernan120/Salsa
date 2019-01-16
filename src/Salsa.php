@@ -23,7 +23,8 @@ final class Salsa
   public $currentMatchedRoute;
   public $http;
   public $regex;
-  public $data;
+	public $data;
+	public $params = [];
 
   use Util;
 
