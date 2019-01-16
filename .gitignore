@@ -95,5 +95,8 @@ composer.phar
 *tmpfiles
 *lol
 .phpintel/*
+/tester/
 
 # End of https://www.gitignore.io/api/test,composer,phpcodesniffer
+
+tester/

@@ -72,7 +72,7 @@ final class Salsa
 	 * [setBaseRoute description]
 	 * @param string $base [description]
 	 */
-	public function setBaseRoute( string $base = "" )
+	public function setBaseRoute( $base = "" )
 	{
 		$this->baseRoute = strtolower($base);
     return $this;
@@ -132,7 +132,7 @@ final class Salsa
   /**
    * [addRoute description];
    */
-	public function addRoute( $route, $parameter, string $method = HTTP::ALL_METHODS )
+	public function addRoute( $route, $parameter, $method = HTTP::ALL_METHODS )
 	{
 		$this->routes[Util::generateUrl(strtolower($route))][$method] = $parameter;
     return $this;
@@ -154,6 +154,7 @@ final class Salsa
     }
 
 
+
     foreach( $this->routes as $route => $methods ){
       
       foreach( $methods as $methodsString => $options ){
@@ -165,7 +166,7 @@ final class Salsa
           $this->regex->converToRegex( $route );
 
           $return = $this->regex->parseRegex( $this->getCurrentRoute() );
-
+          
           if( $return !== false ){
             $this->setCurrentMatchedRoute( $this->routes[$route] ); 
             $this->data->setHandler( $options );

@@ -19,7 +19,7 @@ class DataHandler
   /**
    * summary
    */
-  public function __construct( \Salsa\Salsa $salsa )
+  public function __construct( $salsa )
   {
     $this->salsa = $salsa;
   }
@@ -48,7 +48,6 @@ class DataHandler
    */
   public function setReturnData($data)
   {
-    error_log( print_r( $data,1 ) );
     $this->returnData = $data;
   }
 
@@ -81,19 +80,20 @@ class DataHandler
     }
 
     $type = $this->getType();
-    error_log( print_r( $type,1 ) );
+
+
     if ( $type == "object" && is_callable( $this->handler) ) {
-      $this->object();
+      $this->objectHandler();
     }
     else if ($type == "string") {
-      $this->string();
+      $this->stringHandler();
     }
     else if ($type == "array") {
-      $this->array();
+      $this->arrayHandler();
     }
   }
 
-  public function object()
+  public function objectHandler()
   {
     if ( !isset( $this->handler ) ) {
       return false;
@@ -107,7 +107,7 @@ class DataHandler
     $this->setReturnData( call_user_func_array($this->handler, $this->salsa->regex->params));
   }
 
-  public function string()
+  public function stringHandler()
   {
     if ( !isset( $this->handler) ) {
       return false;
@@ -115,12 +115,12 @@ class DataHandler
     $this->outputString($this->handler);
   }
 
-  public function outputString(string $string)
+  public function outputString($string)
   {
     echo $string;
   }
 
-  public function array()
+  public function arrayHandler()
   {
     if( !isset( $this->handler ) ) {
       return false;
@@ -130,7 +130,7 @@ class DataHandler
     }
   }
 
-  public function callController(array $data)
+  public function callController($data)
   {
     if( class_exists( $data["controller"] ) ) {
       $controller = new $data["controller"];
