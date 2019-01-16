@@ -106,7 +106,7 @@ class RegexHandler
     public function convertPossibleForwardSlash( $pattern )
     {
     	// turn "(/)" into "/?"
-    	return preg_replace( '#\(/\)#', '/?', $pattern );
+    	return preg_replace( '#\(/\)$#', '/?', $pattern );
     }
 
     /**

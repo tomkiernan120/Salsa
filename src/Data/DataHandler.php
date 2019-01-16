@@ -136,7 +136,7 @@ class DataHandler
       $controller = new $data["controller"];
     }
 
-    if( $controller && method_exists( $controller, $data["method"] ) ){
+    if( $controller && method_exists( $controller, $data["method"] ) ) {
       $this->setReturnData( $controller->{$data["method"]}(array_merge($this->salsa->params, is_array($data["passin"]) ? $data["passin"] : array())));
     }
   }
