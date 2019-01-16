@@ -1,4 +1,5 @@
 <?php
+
 /**
  * 
  */
@@ -19,7 +20,7 @@ class DataHandler
   /**
    * summary
    */
-  public function __construct( $salsa )
+  public function __construct($salsa)
   {
     $this->salsa = $salsa;
   }
@@ -75,27 +76,25 @@ class DataHandler
    */
   public function process()
   {
-    if ( !isset( $this->handler ) ){
+    if (!isset($this->handler)) {
       return false;
     }
 
     $type = $this->getType();
 
 
-    if ( $type == "object" && is_callable( $this->handler) ) {
+    if ($type == "object" && is_callable($this->handler)) {
       $this->objectHandler();
-    }
-    else if ($type == "string") {
+    } else if ($type == "string") {
       $this->stringHandler();
-    }
-    else if ($type == "array") {
+    } else if ($type == "array") {
       $this->arrayHandler();
     }
   }
 
   public function objectHandler()
   {
-    if ( !isset( $this->handler ) ) {
+    if (!isset($this->handler)) {
       return false;
     }
     // TODO intercept and expose certain data etc.
@@ -104,12 +103,12 @@ class DataHandler
 
   public function callFunction()
   {
-    $this->setReturnData( call_user_func_array($this->handler, $this->salsa->regex->params));
+    $this->setReturnData(call_user_func_array($this->handler, $this->salsa->regex->params));
   }
 
   public function stringHandler()
   {
-    if ( !isset( $this->handler) ) {
+    if (!isset($this->handler)) {
       return false;
     }
     $this->outputString($this->handler);
@@ -122,7 +121,7 @@ class DataHandler
 
   public function arrayHandler()
   {
-    if( !isset( $this->handler ) ) {
+    if (!isset($this->handler)) {
       return false;
     }
     if (isset($this->handler) && isset($this->handler)) {
@@ -132,14 +131,14 @@ class DataHandler
 
   public function callController($data)
   {
-    if( class_exists( $data["controller"] ) ) {
+    if (class_exists($data["controller"])) {
       $controller = new $data["controller"];
     }
 
-    if( $controller && method_exists( $controller, $data["method"] ) ) {
-      $params = array_merge( $this->salsa->params, is_array( $data["params"] ) ? $data["params"] : array() );
-      $returndata = call_user_func_array( array( $controller, $data["method"] ), $params );
-      $this->setReturnData( $returndata );
+    if ($controller && method_exists($controller, $data["method"])) {
+      $params = array_merge($this->salsa->params, is_array($data["passin"]) ? $data["passin"] : array());
+      $returndata = call_user_func_array(array($controller, $data["method"]), $params);
+      $this->setReturnData($returndata);
     }
   }
 }
