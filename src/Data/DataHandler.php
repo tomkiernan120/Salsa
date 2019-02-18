@@ -82,13 +82,16 @@ class DataHandler
 
     $type = $this->getType();
 
-
     if ($type == "object" && is_callable($this->handler)) {
       $this->objectHandler();
     } else if ($type == "string") {
       $this->stringHandler();
     } else if ($type == "array") {
       $this->arrayHandler();
+    }
+
+    if( isset( $this->returnData ) && gettype( $this->returnData ) == "string" ) {
+      echo $this->returnData;
     }
   }
 
@@ -129,14 +132,20 @@ class DataHandler
     }
   }
 
-  public function callController($data)
+  public function callController( $data )
   {
-    if (class_exists($data["controller"])) {
+    if ( isset( $data["controller"] ) && is_string( $data["controller"] ) && class_exists( $data["controller"] ) ) {
       $controller = new $data["controller"];
     }
-
+    else if( is_object( $data["controller"] ) ){
+      $controller = $data["controller"];
+    }
+    else {
+      throw new \Exception( "Could not find class {$data["controller"]}" );
+    }
+    
     if ($controller && method_exists($controller, $data["method"])) {
-      $params = array_merge($this->salsa->params, is_array($data["passin"]) ? $data["passin"] : array());
+      $params = array_merge($this->salsa->params, is_array($data["passin"]) ? $data["passin"] : [@$data["passin"]]);
       $returndata = call_user_func_array(array($controller, $data["method"]), $params);
       $this->setReturnData($returndata);
     }
