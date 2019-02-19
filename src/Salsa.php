@@ -94,7 +94,24 @@ final class Salsa
 	{
     $this->http->setMethod();
     $dirname = trim( dirname( $_SERVER["PHP_SELF"] ), "/" ) . "/";
-		$this->currentRoute = str_replace( array($this->getBaseRoute(), $dirname ), array(""), strtolower( strtok( $_SERVER["REQUEST_URI"], "?" ) ) );
+		$this->currentRoute = ltrim( str_replace( array( $this->getBaseRoute(), $dirname ), array(""), strtolower( strtok( $_SERVER["REQUEST_URI"], "?" ) ) ), "/" );
+
+    if( substr( $this->currentRoute, -1 ) != "/" ) {
+
+      if( !$this->getConfig( "disableTrailingSlash" ) && $this->http->getMethod() == "POST" ) {
+        $this->currentRoute .= "/";
+      }
+      else if( !$this->getConfig( "disableTrailingSlash" ) ) {
+        $redirect = "/{$this->getBaseRoute()}{$this->currentRoute}/";
+
+        if( $_SERVER["QUERY_STRING"] ) {
+          $redirect .= "?{$_SERVER["QUERY_STRING"]}";
+        }
+
+        $this->redirect( $redirect );
+      }
+    }
+
 		if( $this->currentRoute != "/" ){
 			$this->currentRoute = ltrim( $this->currentRoute, "/" );
 		} 
