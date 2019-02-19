@@ -95,7 +95,6 @@ final class Salsa
     $this->http->setMethod();
     $dirname = trim( dirname( $_SERVER["PHP_SELF"] ), "/" ) . "/";
 		$this->currentRoute = ltrim( str_replace( array( $this->getBaseRoute(), $dirname ), array(""), strtolower( strtok( $_SERVER["REQUEST_URI"], "?" ) ) ), "/" );
-
     if( substr( $this->currentRoute, -1 ) != "/" ) {
 
       if( !$this->getConfig( "disableTrailingSlash" ) && $this->http->getMethod() == "POST" ) {
@@ -181,7 +180,7 @@ final class Salsa
           $this->regex->converToRegex( $route );
 
           $return = $this->regex->parseRegex( $this->getCurrentRoute() );
-          
+
           if( $return !== false ){
             $this->setCurrentMatchedRoute( $this->routes[$route] ); 
             $this->data->setHandler( $options );

@@ -82,7 +82,7 @@ class DataHandler
 
     $type = $this->getType();
 
-    if ($type == "object" && is_callable($this->handler)) {
+    if ($type == "object" && is_callable( $this->handler ) ) {
       $this->objectHandler();
     } else if ($type == "string") {
       $this->stringHandler();
@@ -136,6 +136,11 @@ class DataHandler
   {
     if ( isset( $data["controller"] ) && is_string( $data["controller"] ) && class_exists( $data["controller"] ) ) {
       $controller = new $data["controller"];
+    }
+    else if( isset( $data["method"] ) && !isset( $data["controller"] ) && is_callable( $data["method"] ) ){
+      $this->setHandler( $data["method"] );
+      $this->callFunction();
+      return;
     }
     else if( is_object( $data["controller"] ) ){
       $controller = $data["controller"];
