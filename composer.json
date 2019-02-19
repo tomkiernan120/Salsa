@@ -13,7 +13,8 @@
         "ezyang/htmlpurifier": "^4.10"
    },
    "require-dev": {
-   },
+        "phpunit/phpunit": "^5"
+    },
    "autoload": {
       "psr-4": {
          "Salsa\\": "src/"
